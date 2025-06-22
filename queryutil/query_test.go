@@ -309,7 +309,7 @@ func TestQueryUtil_ResolveSingleField(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := queryutil.ResolveSingleField(tc.input, tc.allowed, tc.defaultField)
+			actual := queryutil.ResolveSingleField(tc.input, tc.defaultField, tc.allowed)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -455,7 +455,7 @@ func BenchmarkQueryUtil_ResolveSingleField(b *testing.B) {
 	for _, tc := range cases {
 		b.Run(tc.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = queryutil.ResolveSingleField(tc.input, tc.allowed, tc.defaultField)
+				_ = queryutil.ResolveSingleField(tc.input, tc.defaultField, tc.allowed)
 			}
 		})
 	}

@@ -97,10 +97,10 @@ func ResolveAllowedFields(input string, allowed map[string]any) []string {
 // Example:
 //
 //	input = "email"
-//	allowed = map[string]any{"email": "user_email", "username": true}
 //	defaultField = "username"
+//	allowed = map[string]any{"email": "user_email", "username": true}
 //	→ returns: "user_email"
-func ResolveSingleField(input string, allowed map[string]any, defaultField string) string {
+func ResolveSingleField(input string, defaultField string, allowed map[string]any) string {
 	input = strings.TrimSpace(input)
 
 	if input == "" {

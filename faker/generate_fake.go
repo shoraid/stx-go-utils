@@ -34,6 +34,13 @@ func GenerateFake[T any]() *T {
 			} else {
 				field.SetString(val)
 			}
+		case "uuid_str":
+			val := UUID()
+			if field.Kind() == reflect.Ptr {
+				field.Set(reflect.ValueOf(&val))
+			} else {
+				field.Set(reflect.ValueOf(val))
+			}
 		case "bool":
 			val := RandBool()
 			if field.Kind() == reflect.Ptr {

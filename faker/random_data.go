@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/shoraid/stx-go-utils/genericutil"
 )
 
@@ -95,4 +97,8 @@ func RandURL() string {
 
 func RandURLPtr() *string {
 	return genericutil.Ptr(RandURL())
+}
+
+func UUID() string {
+	return uuid.Must(uuid.NewV7()).String()
 }

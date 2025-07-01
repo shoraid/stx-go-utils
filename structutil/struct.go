@@ -2,18 +2,19 @@ package structutil
 
 import (
 	"encoding/json"
-	"io"
+	"net/http"
+
+	"github.com/shoraid/stx-go-utils/apperror"
 )
 
-// decodes JSON from io.Reader (e.g., http.Request.Body)
-func DecodeJSON(body io.Reader, target any) error {
-	data, err := io.ReadAll(body)
-
-	if err != nil {
-		return err
+func BindJSON(r *http.Request, input any) error {
+	if r.Body == nil {
+		return apperror.Err400InvalidBody
 	}
 
-	if err := json.Unmarshal(data, target); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(input); err != nil {
 		return err
 	}
 

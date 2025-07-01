@@ -1,94 +1,116 @@
 package structutil_test
 
 import (
-	"errors"
+	"bytes"
 	"io"
-	"strings"
+	"net/http"
 	"testing"
 
+	"github.com/shoraid/stx-go-utils/apperror"
 	"github.com/shoraid/stx-go-utils/structutil"
 	"github.com/stretchr/testify/assert"
 )
 
-type Sample struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
-}
+func TestStructUtil_BindJSON(t *testing.T) {
+	type TestPayload struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
 
-type errorReader struct{}
-
-func (e errorReader) Read(_ []byte) (int, error) {
-	return 0, errors.New("read error")
-}
-
-func TestStructUtil_DecodeJSON(t *testing.T) {
-	tests := []struct {
+	type testCase struct {
 		name        string
-		input       io.Reader
-		target      any
-		expected    any
-		expectError bool
-	}{
+		body        io.Reader
+		expected    TestPayload
+		expectError error
+	}
+
+	tests := []testCase{
 		{
-			name:        "valid JSON",
-			input:       strings.NewReader(`{"name":"Alice","age":30}`),
-			target:      &Sample{},
-			expected:    &Sample{Name: "Alice", Age: 30},
-			expectError: false,
+			name: "valid JSON",
+			body: bytes.NewBufferString(`{"name":"John","age":30}`),
+			expected: TestPayload{
+				Name: "John",
+				Age:  30,
+			},
+			expectError: nil,
 		},
 		{
-			name:        "invalid JSON syntax",
-			input:       strings.NewReader(`{"name":"Alice",`),
-			target:      &Sample{},
-			expected:    &Sample{},
-			expectError: true,
+			name: "unknown field",
+			body: bytes.NewBufferString(`{"name":"Alice","age":25,"extra":"field"}`),
+			expected: TestPayload{
+				Name: "Alice",
+				Age:  25,
+			},
+			expectError: assert.AnError,
+		},
+		{
+			name:        "nil body",
+			body:        nil,
+			expected:    TestPayload{},
+			expectError: apperror.Err400InvalidBody,
+		},
+		{
+			name:        "invalid JSON format",
+			body:        bytes.NewBufferString(`{invalid json}`),
+			expected:    TestPayload{},
+			expectError: assert.AnError,
 		},
 		{
 			name:        "type mismatch",
-			input:       strings.NewReader(`{"name":true,"age":"old"}`),
-			target:      &Sample{},
-			expected:    &Sample{},
-			expectError: true,
-		},
-		{
-			name:        "empty input",
-			input:       strings.NewReader(``),
-			target:      &Sample{},
-			expected:    &Sample{},
-			expectError: true,
-		},
-		{
-			name:        "read error",
-			input:       errorReader{}, // simulate error from io.Reader
-			target:      &Sample{},
-			expected:    &Sample{},
-			expectError: true,
+			body:        bytes.NewBufferString(`{"name":"Alice","age":"old}`),
+			expected:    TestPayload{},
+			expectError: assert.AnError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := structutil.DecodeJSON(tt.input, tt.target)
+			req := &http.Request{
+				Body: toReadCloser(tt.body),
+			}
 
-			if tt.expectError {
+			var result TestPayload
+			err := structutil.BindJSON(req, &result)
+
+			if tt.expectError != nil {
 				assert.Error(t, err)
+				if tt.expectError != assert.AnError {
+					assert.ErrorIs(t, err, tt.expectError)
+				}
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, tt.target)
+				assert.Equal(t, tt.expected, result)
 			}
 		})
 	}
 }
 
-func BenchmarkStructUtil_DecodeJSON(b *testing.B) {
-	var jsonInput = `{"name":"Alice","age":30}`
+func BenchmarkStructUtil_BindJSON(b *testing.B) {
+	type TestPayload struct {
+		Name     string `json:"name"`
+		Age      int    `json:"age"`
+		IsActive bool   `json:"isActive"`
+	}
 
 	for i := 0; i < b.N; i++ {
-		reader := strings.NewReader(jsonInput)
-		var s Sample
-		err := structutil.DecodeJSON(reader, &s)
+		body := bytes.NewBufferString(`{"name":"John","age":30, "isActive": true}`)
+
+		req := &http.Request{
+			Body: toReadCloser(body),
+		}
+
+		var payload TestPayload
+		err := structutil.BindJSON(req, &payload)
 		if err != nil {
 			b.Fatalf("unexpected error: %v", err)
 		}
 	}
+}
+
+// Helper to convert io.Reader to io.ReadCloser
+func toReadCloser(r io.Reader) io.ReadCloser {
+	if r == nil {
+		return nil
+	}
+	return io.NopCloser(r)
 }

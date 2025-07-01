@@ -1,11 +1,9 @@
-package sliceutil_test
+package sliceutil
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
-
-	"github.com/shoraid/stx-go-utils/sliceutil"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +56,7 @@ func TestSliceUtil_Difference(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				result := sliceutil.Difference(tt.base, tt.exclude)
+				result := Difference(tt.base, tt.exclude)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
@@ -111,7 +109,7 @@ func TestSliceUtil_Difference(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				result := sliceutil.Difference(tt.base, tt.exclude)
+				result := Difference(tt.base, tt.exclude)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
@@ -166,7 +164,7 @@ func TestSliceUtil_Intersect(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, sliceutil.Intersect(tt.source, tt.target))
+				assert.Equal(t, tt.expected, Intersect(tt.source, tt.target))
 			})
 		}
 	})
@@ -218,7 +216,7 @@ func TestSliceUtil_Intersect(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, sliceutil.Intersect(tt.source, tt.target))
+				assert.Equal(t, tt.expected, Intersect(tt.source, tt.target))
 			})
 		}
 	})
@@ -282,7 +280,28 @@ func TestSliceUtil_Map(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := sliceutil.Map(tt.input, tt.selector)
+			result := Map(tt.input, tt.selector)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSliceUtil_Unique(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{"With duplicates", []string{"a", "b", "a", "c", "b"}, []string{"a", "b", "c"}},
+		{"All unique", []string{"x", "y", "z"}, []string{"x", "y", "z"}},
+		{"Empty slice", []string{}, []string{}},
+		{"One element", []string{"a"}, []string{"a"}},
+		{"All same", []string{"a", "a", "a"}, []string{"a"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := Unique(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -317,7 +336,7 @@ func BenchmarkSliceUtil_Difference(b *testing.B) {
 				b.ResetTimer()
 
 				for i := 0; i < b.N; i++ {
-					_ = sliceutil.Difference(base, exclude)
+					_ = Difference(base, exclude)
 				}
 			})
 		}
@@ -344,7 +363,7 @@ func BenchmarkSliceUtil_Difference(b *testing.B) {
 				b.ResetTimer()
 
 				for i := 0; i < b.N; i++ {
-					_ = sliceutil.Difference(base, exclude)
+					_ = Difference(base, exclude)
 				}
 			})
 		}
@@ -380,7 +399,7 @@ func BenchmarkSliceUtil_Intersect(b *testing.B) {
 				b.ResetTimer()
 
 				for i := 0; i < b.N; i++ {
-					_ = sliceutil.Intersect(source, target)
+					_ = Intersect(source, target)
 				}
 			})
 		}
@@ -407,7 +426,7 @@ func BenchmarkSliceUtil_Intersect(b *testing.B) {
 				b.ResetTimer()
 
 				for i := 0; i < b.N; i++ {
-					_ = sliceutil.Intersect(source, target)
+					_ = Intersect(source, target)
 				}
 			})
 		}
@@ -456,8 +475,62 @@ func BenchmarkSliceUtil_Map(b *testing.B) {
 	for _, tc := range cases {
 		b.Run(tc.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = sliceutil.Map(tc.data, tc.selector)
+				_ = Map(tc.data, tc.selector)
 			}
 		})
 	}
+}
+
+func BenchmarkSliceUtil_Unique(b *testing.B) {
+	type benchCase[T comparable] struct {
+		name string
+		size int
+		gen  func(i int) T
+	}
+
+	b.Run("Integer cases", func(b *testing.B) {
+		intCases := []benchCase[int]{
+			{"Int-10", 10, func(i int) int { return i % 5 }},
+			{"Int-100", 100, func(i int) int { return i % 50 }},
+			{"Int-500", 500, func(i int) int { return i % 250 }},
+			{"Int-1000", 1000, func(i int) int { return i % 500 }},
+		}
+
+		for _, tc := range intCases {
+			b.Run(tc.name, func(b *testing.B) {
+				input := make([]int, tc.size)
+				for i := range input {
+					input[i] = tc.gen(i)
+				}
+
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					_ = Unique(input)
+				}
+			})
+		}
+	})
+
+	b.Run("String cases", func(b *testing.B) {
+		stringCases := []benchCase[string]{
+			{"String-10", 10, func(i int) string { return "item" + strconv.Itoa(i%5) }},
+			{"String-100", 100, func(i int) string { return "item" + strconv.Itoa(i%50) }},
+			{"String-500", 500, func(i int) string { return "item" + strconv.Itoa(i%250) }},
+			{"String-1000", 1000, func(i int) string { return "item" + strconv.Itoa(i%500) }},
+		}
+
+		for _, tc := range stringCases {
+			b.Run(tc.name, func(b *testing.B) {
+				input := make([]string, tc.size)
+				for i := range input {
+					input[i] = tc.gen(i)
+				}
+
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					_ = Unique(input)
+				}
+			})
+		}
+	})
 }

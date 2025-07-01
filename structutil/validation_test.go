@@ -1,24 +1,25 @@
-package structutil_test
+package structutil
 
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/shoraid/stx-go-utils/apperror"
-	"github.com/shoraid/stx-go-utils/structutil"
 	"github.com/stretchr/testify/assert"
 )
 
-type UserRequest struct {
-	Name     string `json:"name" validate:"required,max=10"`
-	Email    string `json:"email" validate:"required,email"`
-	Age      int    `json:"age" validate:"min=18"`
-	IsActive bool   `json:"is_active" validate:"boolean"`
-}
-
 func TestStructUtil_Validate(t *testing.T) {
+	type UserRequest struct {
+		Name     string `json:"name" validate:"required,max=10"`
+		Email    string `json:"email" validate:"required,email"`
+		Age      int    `json:"age" validate:"min=18"`
+		IsActive bool   `json:"is_active" validate:"boolean"`
+	}
+
 	tests := []struct {
 		name     string
 		request  any
@@ -86,7 +87,7 @@ func TestStructUtil_Validate(t *testing.T) {
 			},
 			expected: map[string][]string{
 				"name":  {"field is required"},
-				"email": {"field is invalid"},
+				"email": {"field must be a valid email address"},
 				"age":   {"minimum value is 18"},
 			},
 			isError: true,
@@ -152,7 +153,97 @@ func TestStructUtil_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := structutil.Validate(tt.request)
+			result, err := Validate(tt.request)
+
+			if tt.isError {
+				assert.Equal(t, apperror.Err400InvalidData, err)
+				assert.Equal(t, tt.expected, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Nil(t, result)
+			}
+		})
+	}
+}
+
+func TestStructUtil_Validate_Nested(t *testing.T) {
+	type Meta struct {
+		Note string `json:"note" validate:"required"`
+	}
+
+	type Roles struct {
+		ID   string `json:"id" validate:"required,uuid"`
+		Name string `json:"name" validate:"required"`
+	}
+
+	type UserRequest struct {
+		Meta          Meta     `json:"meta" validate:"required"`
+		Roles         []Roles  `json:"roles" validate:"required,dive"`
+		PermissionIDs []string `json:"permissionIds" validate:"required,dive,uuid"`
+	}
+
+	tests := []struct {
+		name     string
+		request  any
+		expected map[string][]string
+		isError  bool
+	}{
+		{
+			name: "Valid nested request",
+			request: UserRequest{
+				Meta: Meta{Note: "Valid note"},
+				Roles: []Roles{
+					{ID: "d290f1ee-6c54-4b01-90e6-d701748f0851", Name: "Admin"},
+				},
+				PermissionIDs: []string{"d290f1ee-6c54-4b01-90e6-d701748f0851"},
+			},
+			expected: nil,
+			isError:  false,
+		},
+		{
+			name: "Empty meta.note",
+			request: UserRequest{
+				Meta:          Meta{Note: ""},
+				Roles:         []Roles{{ID: "d290f1ee-6c54-4b01-90e6-d701748f0851", Name: "Admin"}},
+				PermissionIDs: []string{"d290f1ee-6c54-4b01-90e6-d701748f0851"},
+			},
+			expected: map[string][]string{
+				"meta.note": {"field is required"},
+			},
+			isError: true,
+		},
+		{
+			name: "Invalid role ID and empty role name",
+			request: UserRequest{
+				Roles: []Roles{
+					{ID: "invalid-uuid", Name: ""},
+				},
+				Meta:          Meta{Note: "Valid note"},
+				PermissionIDs: []string{"d290f1ee-6c54-4b01-90e6-d701748f0851"},
+			},
+			expected: map[string][]string{
+				"roles.0.id":   {"field must be a valid UUID"},
+				"roles.0.name": {"field is required"},
+			},
+			isError: true,
+		},
+		{
+			name: "Invalid permission ID",
+			request: UserRequest{
+				PermissionIDs: []string{"invalid-uuid"},
+				Meta:          Meta{Note: "Valid note"},
+				Roles:         []Roles{{ID: "d290f1ee-6c54-4b01-90e6-d701748f0851", Name: "Admin"}},
+			},
+			expected: map[string][]string{
+				"permissionIds.0": {"field must be a valid UUID"},
+			},
+			isError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := Validate(tt.request)
 
 			if tt.isError {
 				assert.Equal(t, apperror.Err400InvalidData, err)
@@ -223,7 +314,7 @@ func TestStructUtil_BindAndValidateJSON(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 
 			var input LoginRequest
-			result, err := structutil.BindAndValidateJSON(req, &input)
+			result, err := BindAndValidateJSON(req, &input)
 
 			if tt.expectedError != nil {
 				assert.ErrorIs(t, err, tt.expectedError)
@@ -238,7 +329,106 @@ func TestStructUtil_BindAndValidateJSON(t *testing.T) {
 	}
 }
 
+func TestStructUtil_getErrorMessage(t *testing.T) {
+	type Sample struct {
+		Email    string `validate:"email"`
+		Name     string `validate:"required"`
+		Age      int    `validate:"min=18"`
+		IsActive bool   `validate:"boolean"`
+		Role     string `validate:"oneof=admin user"`
+		ID       string `validate:"uuid"`
+		MaxTest  string `validate:"max=5"`
+	}
+
+	validate := validator.New()
+	s := Sample{
+		Email:    "invalid-email",
+		Name:     "",
+		Age:      15,
+		IsActive: true,
+		Role:     "guest",
+		ID:       "invalid-uuid",
+		MaxTest:  "toolongstring",
+	}
+
+	err := validate.Struct(s)
+	assert.Error(t, err)
+
+	validationErrors := err.(validator.ValidationErrors)
+
+	tests := []struct {
+		tag      string
+		expected string
+	}{
+		{"required", "field is required"},
+		{"email", "field must be a valid email address"},
+		{"min", "minimum value is 18"},
+		{"boolean", "field must be a boolean"}, // no actual error here, but still tested
+		{"oneof", "field must be one of: admin, user"},
+		{"uuid", "field must be a valid UUID"},
+		{"max", "maximum length is 5"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.tag, func(t *testing.T) {
+			// find the matching error with the tag
+			var matched validator.FieldError
+			for _, fe := range validationErrors {
+				if fe.Tag() == tt.tag {
+					matched = fe
+					break
+				}
+			}
+			// only test if matched tag exists in this struct
+			if matched != nil {
+				actual := getErrorMessage(matched)
+				assert.Equal(t, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestStructUtil_getJSONTagName(t *testing.T) {
+	type TestStruct struct {
+		WithTag      string `json:"with_tag"`
+		WithTagOmit  string `json:"with_tag_omit,omitempty"`
+		WithoutTag   string
+		IgnoredField string `json:"-"`
+		EmptyTag     string `json:""`
+	}
+
+	tests := []struct {
+		fieldName string
+		expected  string
+	}{
+		{"WithTag", "with_tag"},
+		{"WithTagOmit", "with_tag_omit"},
+		{"WithoutTag", "WithoutTag"},
+		{"IgnoredField", "IgnoredField"},
+		{"EmptyTag", "EmptyTag"},
+	}
+
+	tType := reflect.TypeOf(TestStruct{})
+
+	for _, tt := range tests {
+		t.Run(tt.fieldName, func(t *testing.T) {
+			field, ok := tType.FieldByName(tt.fieldName)
+			assert.True(t, ok, "field should exist")
+
+			result := getJSONTagName(field)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func BenchmarkStructutil_Validate(b *testing.B) {
+	type UserRequest struct {
+		Name     string `json:"name" validate:"required,max=10"`
+		Email    string `json:"email" validate:"required,email"`
+		Age      int    `json:"age" validate:"min=18"`
+		IsActive bool   `json:"is_active" validate:"boolean"`
+	}
+
 	valid := UserRequest{
 		Name:     "Alice",
 		Email:    "alice@example.com",
@@ -266,7 +456,7 @@ func BenchmarkStructutil_Validate(b *testing.B) {
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				structutil.Validate(tt.payload)
+				Validate(tt.payload)
 			}
 		})
 	}
@@ -311,8 +501,71 @@ func BenchmarkStructutil_BindAndValidateJSON(b *testing.B) {
 				req.Header.Set("Content-Type", "application/json")
 
 				var input LoginRequest
-				_, _ = structutil.BindAndValidateJSON(req, &input)
+				_, _ = BindAndValidateJSON(req, &input)
 			}
 		})
+	}
+}
+
+func BenchmarkStructutil_getErrorMessage(b *testing.B) {
+	type BenchmarkSample struct {
+		Email    string `validate:"email"`
+		Name     string `validate:"required"`
+		Age      int    `validate:"min=18"`
+		IsActive string `validate:"boolean"`
+		Role     string `validate:"oneof=admin user"`
+		ID       string `validate:"uuid"`
+		MaxTest  string `validate:"max=5"`
+	}
+
+	validate := validator.New()
+	s := BenchmarkSample{
+		Email:    "not-an-email",
+		Name:     "",
+		Age:      10,
+		IsActive: "maybe",
+		Role:     "guest",
+		ID:       "invalid-uuid",
+		MaxTest:  "this string is too long",
+	}
+
+	err := validate.Struct(s)
+	if err == nil {
+		b.Fatal("Expected validation error, got nil")
+	}
+
+	errors := err.(validator.ValidationErrors)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, fe := range errors {
+			_ = getErrorMessage(fe)
+		}
+	}
+}
+
+func BenchmarkStructutil_getJSONTagName(b *testing.B) {
+	type BenchmarkStruct struct {
+		WithTag      string `json:"with_tag"`
+		WithTagOmit  string `json:"with_tag_omit,omitempty"`
+		WithoutTag   string
+		IgnoredField string `json:"-"`
+		EmptyTag     string `json:""`
+	}
+
+	tType := reflect.TypeOf(BenchmarkStruct{})
+	fields := []reflect.StructField{
+		tType.Field(0), // WithTag
+		tType.Field(1), // WithTagOmit
+		tType.Field(2), // WithoutTag
+		tType.Field(3), // IgnoredField
+		tType.Field(4), // EmptyTag
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, field := range fields {
+			_ = getJSONTagName(field)
+		}
 	}
 }

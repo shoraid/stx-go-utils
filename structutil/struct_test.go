@@ -1,4 +1,4 @@
-package structutil_test
+package structutil
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/shoraid/stx-go-utils/apperror"
-	"github.com/shoraid/stx-go-utils/structutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,7 +69,7 @@ func TestStructUtil_BindJSON(t *testing.T) {
 			}
 
 			var result TestPayload
-			err := structutil.BindJSON(req, &result)
+			err := BindJSON(req, &result)
 
 			if tt.expectError != nil {
 				assert.Error(t, err)
@@ -100,7 +99,7 @@ func BenchmarkStructUtil_BindJSON(b *testing.B) {
 		}
 
 		var payload TestPayload
-		err := structutil.BindJSON(req, &payload)
+		err := BindJSON(req, &payload)
 		if err != nil {
 			b.Fatalf("unexpected error: %v", err)
 		}

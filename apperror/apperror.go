@@ -8,6 +8,7 @@ type ErrorCode string
 
 const (
 	INVALID_ACTION_CODE        ErrorCode = "INVALID_ACTION"
+	INVALID_BODY_CODE          ErrorCode = "INVALID_BODY"
 	INVALID_DATA_CODE          ErrorCode = "INVALID_DATA"
 	INVALID_PARAMS_CODE        ErrorCode = "INVALID_PARAMS"
 	UNAUTHORIZED_CODE          ErrorCode = "UNAUTHORIZED"
@@ -19,6 +20,7 @@ const (
 
 var (
 	Err400InvalidAction     = errors.New("invalid action")
+	Err400InvalidBody       = errors.New("invalid body")
 	Err400InvalidData       = errors.New("invalid data")
 	Err400InvalidParams     = errors.New("invalid params")
 	Err401Unauthorized      = errors.New("unauthorized")

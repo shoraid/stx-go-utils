@@ -41,6 +41,19 @@ func TestHttpResponse_HandleError(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			name:         "invalid body should return 400",
+			err:          apperror.Err400InvalidBody,
+			expectedCode: http.StatusBadRequest,
+			expectedBody: map[string]any{
+				"code":    string(apperror.INVALID_BODY_CODE),
+				"message": "Invalid body",
+				"details": map[string]any{
+					"errors": nil,
+				},
+			},
+			expectedReturn: true,
+		},
+		{
 			name:         "invalid data should return 400",
 			err:          apperror.Err400InvalidData,
 			expectedCode: http.StatusBadRequest,
@@ -174,6 +187,10 @@ func BenchmarkHttpResponse_HandleError(b *testing.B) {
 		{
 			name: "InvalidDataError",
 			err:  apperror.Err400InvalidData,
+		},
+		{
+			name: "InvalidBodyError",
+			err:  apperror.Err400InvalidBody,
 		},
 		{
 			name: "InvalidParamsError",

@@ -43,6 +43,14 @@ func HandleError(w http.ResponseWriter, err error, details ...any) bool {
 		}
 		statusCode = http.StatusBadRequest
 
+	case apperror.Err400InvalidBody:
+		resp = Response{
+			Code:    apperror.INVALID_BODY_CODE,
+			Message: "Invalid body",
+			Details: map[string]any{"errors": errorDetails},
+		}
+		statusCode = http.StatusBadRequest
+
 	case apperror.Err400InvalidParams:
 		resp = Response{
 			Code:    apperror.INVALID_PARAMS_CODE,

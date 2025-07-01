@@ -1,6 +1,9 @@
 package structutil_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/shoraid/stx-go-utils/apperror"
@@ -162,6 +165,79 @@ func TestStructUtil_Validate(t *testing.T) {
 	}
 }
 
+func TestStructUtil_BindAndValidateJSON(t *testing.T) {
+	type LoginRequest struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=6"`
+	}
+
+	tests := []struct {
+		name           string
+		body           string
+		expectedError  error
+		expectedFields map[string][]string
+	}{
+		{
+			name: "Valid JSON and valid data",
+			body: `{"email":"test@example.com","password":"secret123"}`,
+		},
+		{
+			name:          "Valid JSON but invalid data",
+			body:          `{"email":"","password":"123"}`,
+			expectedError: apperror.Err400InvalidData,
+			expectedFields: map[string][]string{
+				"email":    {"field is required"},
+				"password": {"minimum value is 6"},
+			},
+		},
+		{
+			name:          "Empty body (EOF)",
+			body:          ``,
+			expectedError: apperror.Err400InvalidData,
+			expectedFields: map[string][]string{
+				"email":    {"field is required"},
+				"password": {"field is required"},
+			},
+		},
+		{
+			name:          "Invalid JSON (trailing comma)",
+			body:          `{"email":"test@example.com","password":"123",}`,
+			expectedError: apperror.Err400InvalidBody,
+			expectedFields: map[string][]string{
+				"json": {"invalid JSON format: please check for missing commas, braces, or quotes"},
+			},
+		},
+		{
+			name:          "Wrong type (password should be string)",
+			body:          `{"email":"test@example.com","password":123}`,
+			expectedError: apperror.Err400InvalidData,
+			expectedFields: map[string][]string{
+				"password": {"invalid type, expected string"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			var input LoginRequest
+			result, err := structutil.BindAndValidateJSON(req, &input)
+
+			if tt.expectedError != nil {
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Equal(t, tt.expectedFields, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Nil(t, result)
+				assert.Equal(t, "test@example.com", input.Email)
+				assert.Equal(t, "secret123", input.Password)
+			}
+		})
+	}
+}
+
 func BenchmarkStructutil_Validate(b *testing.B) {
 	valid := UserRequest{
 		Name:     "Alice",
@@ -191,6 +267,51 @@ func BenchmarkStructutil_Validate(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				structutil.Validate(tt.payload)
+			}
+		})
+	}
+}
+
+func BenchmarkStructutil_BindAndValidateJSON(b *testing.B) {
+	type LoginRequest struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=6"`
+	}
+
+	tests := []struct {
+		name string
+		body string
+	}{
+		{
+			"Valid JSON and valid data",
+			`{"email":"test@example.com","password":"secret123"}`,
+		},
+		{
+			"Valid JSON but invalid data",
+			`{"email":"","password":"123"}`,
+		},
+		{
+			"Empty body (EOF)",
+			``,
+		},
+		{
+			"Invalid JSON (trailing comma)",
+			`{"email":"test@example.com","password":"123",}`,
+		},
+		{
+			"Wrong type (password should be string)",
+			`{"email":"test@example.com","password":123}`,
+		},
+	}
+
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tt.body))
+				req.Header.Set("Content-Type", "application/json")
+
+				var input LoginRequest
+				_, _ = structutil.BindAndValidateJSON(req, &input)
 			}
 		})
 	}

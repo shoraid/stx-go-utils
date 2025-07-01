@@ -1,6 +1,8 @@
 package structutil
 
 import (
+	"encoding/json"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -60,4 +62,35 @@ func getErrorMessage(fe validator.FieldError) string {
 	default:
 		return "field is invalid"
 	}
+}
+
+func BindAndValidateJSON(r *http.Request, input any) (map[string][]string, error) {
+	err := BindJSON(r, input)
+	if err != nil {
+
+		fieldErrors, jsonErr := getJsonErrorMessage(err)
+		if jsonErr != nil {
+			return fieldErrors, jsonErr
+		}
+	}
+
+	return Validate(input)
+}
+
+func getJsonErrorMessage(err error) (map[string][]string, error) {
+	switch e := err.(type) {
+	case *json.SyntaxError:
+		return map[string][]string{
+			"json": {"invalid JSON format: please check for missing commas, braces, or quotes"},
+		}, apperror.Err400InvalidBody
+	case *json.UnmarshalTypeError:
+		fieldName := e.Field
+		if fieldName != "" {
+			return map[string][]string{
+				fieldName: {"invalid type, expected " + e.Type.String()},
+			}, apperror.Err400InvalidData
+		}
+	}
+
+	return nil, nil
 }

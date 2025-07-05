@@ -6,7 +6,15 @@ import (
 	"github.com/shoraid/stx-go-utils/stringutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestStringUtil_GenerateUUID(t *testing.T) {
+	id, err := stringutil.GenerateUUID()
+
+	require.NoError(t, err)
+	require.NotEmpty(t, id)
+}
 
 func TestStringUtil_ToSnakeCase(t *testing.T) {
 	tests := []struct {
@@ -24,6 +32,12 @@ func TestStringUtil_ToSnakeCase(t *testing.T) {
 		actual := stringutil.ToSnakeCase(test.input)
 
 		assert.Equal(t, test.expected, actual, "ToSnakeCase should convert %s to %s", test.input, test.expected)
+	}
+}
+
+func BenchmarkStringUtil_GenerateUUID(b *testing.B) {
+	for b.Loop() {
+		stringutil.GenerateUUID()
 	}
 }
 

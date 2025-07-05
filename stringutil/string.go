@@ -1,8 +1,11 @@
 package stringutil
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func ToSnakeCase(str string) string {
@@ -14,4 +17,13 @@ func ToSnakeCase(str string) string {
 	snake = strings.ReplaceAll(snake, "__", "_")
 
 	return strings.ToLower(snake)
+}
+
+func GenerateUUID() (string, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return "", fmt.Errorf("uuid generation failed: %w", err)
+	}
+
+	return id.String(), nil
 }

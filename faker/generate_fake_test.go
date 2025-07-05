@@ -70,7 +70,7 @@ func TestFaker_GenerateFake(t *testing.T) {
 }
 
 func BenchmarkGenerateFake(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = faker.GenerateFake[TestStruct]()
+	for b.Loop() {
+		faker.GenerateFake[TestStruct]()
 	}
 }

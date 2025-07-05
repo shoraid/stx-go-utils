@@ -333,10 +333,8 @@ func BenchmarkSliceUtil_Difference(b *testing.B) {
 					exclude[i] = tc.gen(i + tc.offset)
 				}
 
-				b.ResetTimer()
-
-				for i := 0; i < b.N; i++ {
-					_ = Difference(base, exclude)
+				for b.Loop() {
+					Difference(base, exclude)
 				}
 			})
 		}
@@ -360,10 +358,8 @@ func BenchmarkSliceUtil_Difference(b *testing.B) {
 					exclude[i] = tc.gen(i + tc.offset)
 				}
 
-				b.ResetTimer()
-
-				for i := 0; i < b.N; i++ {
-					_ = Difference(base, exclude)
+				for b.Loop() {
+					Difference(base, exclude)
 				}
 			})
 		}
@@ -396,10 +392,8 @@ func BenchmarkSliceUtil_Intersect(b *testing.B) {
 					target[i] = tc.gen(i + tc.offset)
 				}
 
-				b.ResetTimer()
-
-				for i := 0; i < b.N; i++ {
-					_ = Intersect(source, target)
+				for b.Loop() {
+					Intersect(source, target)
 				}
 			})
 		}
@@ -423,10 +417,8 @@ func BenchmarkSliceUtil_Intersect(b *testing.B) {
 					target[i] = tc.gen(i + tc.offset)
 				}
 
-				b.ResetTimer()
-
-				for i := 0; i < b.N; i++ {
-					_ = Intersect(source, target)
+				for b.Loop() {
+					Intersect(source, target)
 				}
 			})
 		}
@@ -470,12 +462,10 @@ func BenchmarkSliceUtil_Map(b *testing.B) {
 		},
 	}
 
-	b.ResetTimer()
-
 	for _, tc := range cases {
 		b.Run(tc.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = Map(tc.data, tc.selector)
+			for b.Loop() {
+				Map(tc.data, tc.selector)
 			}
 		})
 	}
@@ -503,9 +493,8 @@ func BenchmarkSliceUtil_Unique(b *testing.B) {
 					input[i] = tc.gen(i)
 				}
 
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					_ = Unique(input)
+				for b.Loop() {
+					Unique(input)
 				}
 			})
 		}
@@ -526,9 +515,8 @@ func BenchmarkSliceUtil_Unique(b *testing.B) {
 					input[i] = tc.gen(i)
 				}
 
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					_ = Unique(input)
+				for b.Loop() {
+					Unique(input)
 				}
 			})
 		}

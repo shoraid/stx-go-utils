@@ -29,7 +29,7 @@ func TestStringUtil_ToSnakeCase(t *testing.T) {
 
 func BenchmarkStringUtil_ToSnakeCase(b *testing.B) {
 	input := "TestCaseWithHTTPRequest"
-	for i := 0; i < b.N; i++ {
-		_ = stringutil.ToSnakeCase(input)
+	for b.Loop() {
+		stringutil.ToSnakeCase(input)
 	}
 }

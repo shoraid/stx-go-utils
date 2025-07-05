@@ -455,7 +455,7 @@ func BenchmarkStructutil_Validate(b *testing.B) {
 
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				Validate(tt.payload)
 			}
 		})
@@ -496,12 +496,12 @@ func BenchmarkStructutil_BindAndValidateJSON(b *testing.B) {
 
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tt.body))
 				req.Header.Set("Content-Type", "application/json")
 
 				var input LoginRequest
-				_, _ = BindAndValidateJSON(req, &input)
+				BindAndValidateJSON(req, &input)
 			}
 		})
 	}
@@ -536,10 +536,9 @@ func BenchmarkStructutil_getErrorMessage(b *testing.B) {
 
 	errors := err.(validator.ValidationErrors)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		for _, fe := range errors {
-			_ = getErrorMessage(fe)
+			getErrorMessage(fe)
 		}
 	}
 }
@@ -562,10 +561,9 @@ func BenchmarkStructutil_getJSONTagName(b *testing.B) {
 		tType.Field(4), // EmptyTag
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		for _, field := range fields {
-			_ = getJSONTagName(field)
+			getJSONTagName(field)
 		}
 	}
 }

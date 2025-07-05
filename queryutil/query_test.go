@@ -320,7 +320,7 @@ func BenchmarkQueryUtil_CalculatePagination(b *testing.B) {
 	perPage := "10"
 	defaultPerPage := 15
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		queryutil.CalculatePagination(page, perPage, defaultPerPage)
 	}
 }
@@ -329,7 +329,7 @@ func BenchmarkQueryUtil_CalculateTotalPage(b *testing.B) {
 	totalData := 1000
 	perPage := 20
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		queryutil.CalculateTotalPage(totalData, perPage)
 	}
 }
@@ -404,8 +404,8 @@ func BenchmarkQueryUtil_ResolveAllowedFields(b *testing.B) {
 
 	for _, tc := range cases {
 		b.Run(tc.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = queryutil.ResolveAllowedFields(tc.input, tc.allowed)
+			for b.Loop() {
+				queryutil.ResolveAllowedFields(tc.input, tc.allowed)
 			}
 		})
 	}
@@ -454,8 +454,8 @@ func BenchmarkQueryUtil_ResolveSingleField(b *testing.B) {
 
 	for _, tc := range cases {
 		b.Run(tc.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = queryutil.ResolveSingleField(tc.input, tc.defaultField, tc.allowed)
+			for b.Loop() {
+				queryutil.ResolveSingleField(tc.input, tc.defaultField, tc.allowed)
 			}
 		})
 	}

@@ -213,8 +213,8 @@ func BenchmarkGenericUtil_FirstNonNil(b *testing.B) {
 
 	for _, cs := range cases {
 		b.Run(cs.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = genericutil.FirstNonNil(cs.input...)
+			for b.Loop() {
+				genericutil.FirstNonNil(cs.input...)
 			}
 		})
 	}
@@ -245,8 +245,8 @@ func BenchmarkGenericUtil_FirstNonZero(b *testing.B) {
 
 	for _, cs := range stringCases {
 		b.Run(cs.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = genericutil.FirstNonZero(cs.input...)
+			for b.Loop() {
+				genericutil.FirstNonZero(cs.input...)
 			}
 		})
 	}
@@ -255,15 +255,17 @@ func BenchmarkGenericUtil_FirstNonZero(b *testing.B) {
 func BenchmarkGenericUtil_Ptr(b *testing.B) {
 	b.Run("String", func(b *testing.B) {
 		s := "benchmark"
-		for i := 0; i < b.N; i++ {
-			_ = genericutil.Ptr(s)
+
+		for b.Loop() {
+			genericutil.Ptr(s)
 		}
 	})
 
 	b.Run("Int", func(b *testing.B) {
 		data := 123
-		for i := 0; i < b.N; i++ {
-			_ = genericutil.Ptr(data)
+
+		for b.Loop() {
+			genericutil.Ptr(data)
 		}
 	})
 
@@ -272,9 +274,11 @@ func BenchmarkGenericUtil_Ptr(b *testing.B) {
 			A int
 			B string
 		}
+
 		ex := Example{A: 1, B: "data"}
-		for i := 0; i < b.N; i++ {
-			_ = genericutil.Ptr(ex)
+
+		for b.Loop() {
+			genericutil.Ptr(ex)
 		}
 	})
 }

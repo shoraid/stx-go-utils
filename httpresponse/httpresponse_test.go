@@ -222,12 +222,11 @@ func BenchmarkHttpResponse_HandleError(b *testing.B) {
 		},
 	}
 
-	b.ResetTimer()
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				w := httptest.NewRecorder()
-				_ = httpresponse.HandleError(w, tt.err)
+				httpresponse.HandleError(w, tt.err)
 			}
 		})
 	}

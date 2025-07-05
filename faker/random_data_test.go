@@ -291,56 +291,55 @@ func TestFaker_UUID(t *testing.T) {
 func BenchmarkFaker_PickRandom(b *testing.B) {
 	elements := []any{"apple", 123, true, 4.5, "banana", struct{}{}, []int{1, 2, 3}}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = faker.PickRandom(elements...)
+	for b.Loop() {
+		faker.PickRandom(elements...)
 	}
 }
 
 func BenchmarkFaker_RandBool(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandBool()
 	}
 }
 
 func BenchmarkFaker_RandBoolPtr(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandBoolPtr()
 	}
 }
 
 func BenchmarkFaker_RandInt(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandInt(1, 100)
 	}
 }
 
 func BenchmarkFaker_RandIntPtr(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandIntPtr(1, 100)
 	}
 }
 
 func BenchmarkFaker_RandSentence(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandSentence(10)
 	}
 }
 
 func BenchmarkFaker_RandSentencePtr(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandSentencePtr(10)
 	}
 }
 
 func BenchmarkFaker_RandString(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandString(16)
 	}
 }
 
 func BenchmarkFaker_RandStringPtr(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandStringPtr(16)
 	}
 }
@@ -349,8 +348,7 @@ func BenchmarkFaker_RandTime(b *testing.B) {
 	start := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandTime(start, end)
 	}
 }
@@ -359,26 +357,25 @@ func BenchmarkFaker_RandTimePtr(b *testing.B) {
 	start := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandTimePtr(start, end)
 	}
 }
 
 func BenchmarkFaker_RandURL(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandURL()
 	}
 }
 
 func BenchmarkFaker_RandURLPtr(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		faker.RandURLPtr()
 	}
 }
 
 func BenchmarkFaker_UUID(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = faker.UUID()
+	for b.Loop() {
+		faker.UUID()
 	}
 }

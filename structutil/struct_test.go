@@ -91,7 +91,7 @@ func BenchmarkStructUtil_BindJSON(b *testing.B) {
 		IsActive bool   `json:"isActive"`
 	}
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		body := bytes.NewBufferString(`{"name":"John","age":30, "isActive": true}`)
 
 		req := &http.Request{
@@ -99,10 +99,7 @@ func BenchmarkStructUtil_BindJSON(b *testing.B) {
 		}
 
 		var payload TestPayload
-		err := BindJSON(req, &payload)
-		if err != nil {
-			b.Fatalf("unexpected error: %v", err)
-		}
+		BindJSON(req, &payload)
 	}
 }
 

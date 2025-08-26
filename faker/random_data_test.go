@@ -288,6 +288,45 @@ func TestFaker_UUID(t *testing.T) {
 	}
 }
 
+func TestFaker_UUIDPtr(t *testing.T) {
+	tests := []struct {
+		name string
+		num  int
+	}{
+		{
+			name: "generate 1 UUID",
+			num:  1,
+		},
+		{
+			name: "generate 100 UUIDs and ensure uniqueness",
+			num:  100,
+		},
+		{
+			name: "generate 1000 UUIDs and ensure uniqueness",
+			num:  1000,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			seen := make(map[string]bool, tt.num)
+
+			for i := 0; i < tt.num; i++ {
+				id := faker.UUIDPtr()
+
+				parsed, err := uuid.Parse(*id)
+				assert.NoError(t, err, "should be valid UUID")
+				assert.Equal(t, uuid.Version(7), parsed.Version(), "should be UUIDv7")
+
+				_, exists := seen[*id]
+				assert.False(t, exists, "UUID must be unique")
+
+				seen[*id] = true
+			}
+		})
+	}
+}
+
 func BenchmarkFaker_PickRandom(b *testing.B) {
 	elements := []any{"apple", 123, true, 4.5, "banana", struct{}{}, []int{1, 2, 3}}
 
@@ -377,5 +416,11 @@ func BenchmarkFaker_RandURLPtr(b *testing.B) {
 func BenchmarkFaker_UUID(b *testing.B) {
 	for b.Loop() {
 		faker.UUID()
+	}
+}
+
+func BenchmarkFaker_UUIDPtr(b *testing.B) {
+	for b.Loop() {
+		faker.UUIDPtr()
 	}
 }

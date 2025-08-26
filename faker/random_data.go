@@ -102,3 +102,7 @@ func RandURLPtr() *string {
 func UUID() string {
 	return uuid.Must(uuid.NewV7()).String()
 }
+
+func UUIDPtr() *string {
+	return genericutil.Ptr(uuid.Must(uuid.NewV7()).String())
+}

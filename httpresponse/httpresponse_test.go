@@ -100,6 +100,17 @@ func TestHttpResponse_HandleError(t *testing.T) {
 			expectedReturn: true,
 		},
 		{
+			name:         "no tenant should return 403",
+			err:          apperror.Err403NoTenant,
+			expectedCode: http.StatusForbidden,
+			expectedBody: map[string]any{
+				"code":    string(apperror.FORBIDDEN_NO_TENANT_CODE),
+				"message": "User has no tenant",
+				"details": nil,
+			},
+			expectedReturn: true,
+		},
+		{
 			name:         "csrf token mismatch should return 403",
 			err:          apperror.Err403CSRFTokenMismatch,
 			expectedCode: http.StatusForbidden,
@@ -203,6 +214,10 @@ func BenchmarkHttpResponse_HandleError(b *testing.B) {
 		{
 			name: "ForbiddenError",
 			err:  apperror.Err403Forbidden,
+		},
+		{
+			name: "NoTenantError",
+			err:  apperror.Err403NoTenant,
 		},
 		{
 			name: "CSRFTokenMismatchError",

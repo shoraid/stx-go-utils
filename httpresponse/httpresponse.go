@@ -75,6 +75,14 @@ func HandleError(w http.ResponseWriter, err error, details ...any) bool {
 		}
 		statusCode = http.StatusForbidden
 
+	case apperror.Err403NoTenant:
+		resp = Response{
+			Code:    apperror.FORBIDDEN_NO_TENANT_CODE,
+			Message: "User has no tenant",
+			Details: errorDetails,
+		}
+		statusCode = http.StatusForbidden
+
 	case apperror.Err403CSRFTokenMismatch:
 		resp = Response{
 			Code:    apperror.CSRF_TOKEN_MISMATCH_CODE,

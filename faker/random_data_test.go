@@ -1,6 +1,7 @@
 package faker_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -63,6 +64,63 @@ func TestFaker_RandBoolPtr(t *testing.T) {
 		assert.NotNil(t, ptr, "Expected pointer, got nil")
 		assert.True(t, *ptr == true || *ptr == false, "Expected true or false")
 	})
+}
+
+func TestFaker_RandEmail(t *testing.T) {
+	tests := []struct {
+		name    string
+		emailFn func() string
+	}{
+		{
+			name:    "should generate valid random email",
+			emailFn: faker.RandEmail,
+		},
+	}
+
+	// Regular expression for validating email format: username + 3 digits + @domain
+	emailRegex := regexp.MustCompile(`^[a-z]+[0-9]{3}@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|example\.com|test\.com|dummy\.net|sample\.org|mail\.com)$`)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			email := tt.emailFn()
+
+			// Check: not empty
+			assert.NotEmpty(t, email, "email should not be empty")
+
+			// Check: must match regex
+			assert.Regexp(t, emailRegex, email, "email format must be valid")
+		})
+	}
+}
+
+func TestFaker_RandEmailPtr(t *testing.T) {
+	tests := []struct {
+		name    string
+		emailFn func() *string
+	}{
+		{
+			name:    "should generate valid random email pointer",
+			emailFn: faker.RandEmailPtr,
+		},
+	}
+
+	// Regular expression for validating email format: username + 3 digits + @domain
+	emailRegex := regexp.MustCompile(`^[a-z]+[0-9]{3}@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|example\.com|test\.com|dummy\.net|sample\.org|mail\.com)$`)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			emailPtr := tt.emailFn()
+
+			// Check: pointer should not be nil
+			assert.NotNil(t, emailPtr, "email pointer should not be nil")
+
+			// Check: email value should not be empty
+			assert.NotEmpty(t, *emailPtr, "email should not be empty")
+
+			// Check: must match regex
+			assert.Regexp(t, emailRegex, *emailPtr, "email format must be valid")
+		})
+	}
 }
 
 func TestFaker_RandInt(t *testing.T) {
@@ -344,6 +402,18 @@ func BenchmarkFaker_RandBool(b *testing.B) {
 func BenchmarkFaker_RandBoolPtr(b *testing.B) {
 	for b.Loop() {
 		faker.RandBoolPtr()
+	}
+}
+
+func BenchmarkRandEmail(b *testing.B) {
+	for b.Loop() {
+		_ = faker.RandEmail()
+	}
+}
+
+func BenchmarkRandEmailPtr(b *testing.B) {
+	for b.Loop() {
+		_ = faker.RandEmailPtr()
 	}
 }
 

@@ -48,34 +48,26 @@ func TestStringUtil_IsValidUUID(t *testing.T) {
 	}
 }
 
-func BenchmarkIsValidUUID_Valid(b *testing.B) {
-	validUUID := uuid.NewString()
-
-	for b.Loop() {
-		IsValidUUID(validUUID)
+func BenchmarkStringUtil_IsValidUUID(b *testing.B) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "valid UUID",
+			input: uuid.NewString(),
+		},
+		{
+			name:  "invalid UUID",
+			input: "not-a-valid-uuid",
+		},
 	}
-}
 
-func BenchmarkIsValidUUID_Invalid(b *testing.B) {
-	invalidUUID := "not-a-valid-uuid"
-
-	for b.Loop() {
-		IsValidUUID(invalidUUID)
-	}
-}
-
-func BenchmarkIsValidUUID_Valid2(b *testing.B) {
-	validUUID := uuid.NewString()
-
-	for b.Loop() {
-		IsValidUUID(validUUID)
-	}
-}
-
-func BenchmarkIsValidUUID_Invalid2(b *testing.B) {
-	invalidUUID := "not-a-valid-uuid"
-
-	for b.Loop() {
-		IsValidUUID(invalidUUID)
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			for b.Loop() {
+				IsValidUUID(tt.input)
+			}
+		})
 	}
 }

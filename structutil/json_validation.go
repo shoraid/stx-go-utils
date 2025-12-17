@@ -10,7 +10,11 @@ import (
 	"github.com/shoraid/stx-go-utils/apperror"
 )
 
-var validate = validator.New()
+// Validator is the shared validator instance.
+// You can register custom validators using:
+//
+//	structutil.Validator.RegisterValidation("custom", customValidatorFunc)
+var Validator = validator.New()
 
 // Validate validates a struct using `validate` tags and returns a map of field errors
 // using JSON tag names. Supports nested structs and slices.
@@ -63,7 +67,7 @@ var validate = validator.New()
 //	    "permissionIds.0":   {"field must be a valid UUID"},
 //	}, apperror.Err400InvalidData
 func Validate(input any) (map[string][]string, error) {
-	err := validate.Struct(input)
+	err := Validator.Struct(input)
 	if err == nil {
 		return nil, nil
 	}

@@ -277,7 +277,7 @@ func setScalarValue(fieldValue reflect.Value, value string) error {
 //	    "age":   {"minimum value is 18"},
 //	}, apperror.Err400InvalidData
 func ValidateForm(input any) (map[string][]string, error) {
-	err := validate.Struct(input)
+	err := Validator.Struct(input)
 	if err == nil {
 		return nil, nil
 	}
